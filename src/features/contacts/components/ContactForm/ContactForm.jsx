@@ -1,9 +1,14 @@
-import PropTypes from 'prop-types';
 import { Formik, ErrorMessage } from 'formik';
-import Box from 'common/components/Box/Box';
 import * as yup from 'yup';
 import 'yup-phone';
+import shortid from 'shortid';
+import Box from 'common/components/Box/Box';
+import chekExistName from 'common/services/chekExistName';
+import chekExistNumber from 'common/services/chekExistNumber';
+import { getContacts } from 'app/selectors';
+import { contactAdd } from 'features/contacts/contactsSlice';
 import { AddContactForm, Label, Input, Button } from './ContactForm.styled';
+import { useDispatch, useSelector } from 'react-redux';
 
 const schema = yup.object().shape({
   name: yup.string().required(),
@@ -15,11 +20,32 @@ const initialValues = {
   number: '',
 };
 
-export default function ContactForm({ onSubmit }) {
+export default function ContactForm() {
+  const contacts = useSelector(getContacts);
+  const dispatch = useDispatch();
+
+  function addContact(values, actions) {
+    const { name, number } = values;
+    const contact = {
+      id: shortid.generate(),
+      name,
+      number,
+    };
+
+    if (chekExistName(name, contacts)) {
+      window.alert(name + ' is already in contacts');
+    } else if (chekExistNumber(number, contacts)) {
+      window.alert('Number ' + number + ' is already in contacts');
+    } else {
+      dispatch(contactAdd(contact));
+      actions.resetForm();
+    }
+  }
+
   return (
     <Formik
       initialValues={initialValues}
-      onSubmit={onSubmit}
+      onSubmit={addContact}
       validationSchema={schema}
     >
       <AddContactForm>
@@ -52,7 +78,3 @@ export default function ContactForm({ onSubmit }) {
     </Formik>
   );
 }
-
-ContactForm.propTypes = {
-  onSubmit: PropTypes.func.isRequired,
-};
